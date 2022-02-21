@@ -32,26 +32,25 @@ int main() {
 	changeBrightness(channels_split[1], pixels_count);
 	changeBrightness(channels_split[2], pixels_count);
 
-	for (size_t i = 0; i < 256; i++)
-	{
-		std::cout << pixels_count[i] << '\n';
-	}
 	cv::Mat channels_merge[3] = { channels_split[0],channels_split[1], channels_split[2] };
 	cv::Mat changed_image;
 	cv::merge(channels_merge, 3, changed_image);
-	cv::imshow("1", changed_image);
 	cv::imwrite("lab03_rgb_res.png", changed_image);
 	
-	cv::Mat graphic(256, 256, CV_8UC3, cv::Scalar(240, 240, 240));
+	cv::Mat graphic(512, 512, CV_8UC3, cv::Scalar(255, 255, 255));
 
-	for (int i = 0; i < 255; i++)
+	for (int i = 0; i < 511; i++)
 	{
-		cv::line(graphic, cv::Point((i), 256-pixels_count[i]),
-			cv::Point(i+1, 256 - pixels_count[i+1]),
-			cv::Scalar(255, 0, 0), 1, 8, 0);
+		cv::line(graphic, cv::Point(i, 512 - pixels_count[(i/2)]*2),
+			cv::Point(i+1, 512 - pixels_count[(i+1)/2]*2),
+			cv::Scalar(0, 0, 0), 1, 8, 0);
 	}
-	cv::imshow("2", graphic);
+	cv::line(graphic, cv::Point((0), 512),
+		cv::Point(512, 512),
+		cv::Scalar(0, 0, 0), 5, 8, 0);
+	cv::line(graphic, cv::Point((0), 512),
+		cv::Point(0, 0),
+		cv::Scalar(0, 0, 0), 5, 8, 0);
 	cv::imwrite("lab03_viz_func.png", graphic);
 	
-	cv::waitKey(0);
 }

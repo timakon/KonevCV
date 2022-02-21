@@ -5,37 +5,42 @@ void countBrightness(int* pixel_array) {
 		pixel_array[i] = i*i*i/(256*256);
 	}	
 }
-void changeBrightness(cv::Mat grayscale_image, int* pixel_array) {
+void changeBrightnessGrayscale(cv::Mat grayscale_image, int* pixel_array) {
+
 	for (int i = 0; i < grayscale_image.rows; i++) {
 		for (int j = 0; j < grayscale_image.cols; j++) {
 			grayscale_image.at<uchar>(i, j) = pixel_array[grayscale_image.at<uchar>(i, j)];
 		}
 	}
 }
+cv::Mat changeBrightness(cv::Mat image, int* pixel_array) {
+	cv::Mat channels_split[3];
+	cv::split(image, channels_split);
+	changeBrightnessGrayscale(channels_split[0], pixel_array);
+	changeBrightnessGrayscale(channels_split[1], pixel_array);
+	changeBrightnessGrayscale(channels_split[2], pixel_array);
+
+	cv::Mat changed_image;
+	cv::Mat channels_merge[3] = { channels_split[0], channels_split[1], channels_split[2]};
+	cv::merge(channels_merge, 3, changed_image);
+	return changed_image;
+}
 
 int main() {
 	cv::Mat image_png = cv::imread("../../../data/cross_0256x0256.png");
 	cv::imwrite("lab03_rgb.png", image_png);
 
-	cv::Mat channels_split[3];
-	cv::split(image_png, channels_split);
-
-	cv::imwrite("lab03_gre.png", channels_split[0]);
+	cv::Mat grayscale_image;
+	cv::cvtColor(image_png, grayscale_image, cv::COLOR_BGR2GRAY);
+	cv::imwrite("lab03_gre.png", grayscale_image);
 	
 	int pixels_count[256];
-
 	countBrightness(pixels_count);
 
-	changeBrightness(channels_split[0], pixels_count);
-	cv::imwrite("lab03_gre_res.png", channels_split[0]);
+	changeBrightnessGrayscale(grayscale_image, pixels_count);
+	cv::imwrite("lab03_gre_res.png", grayscale_image);
 
-	changeBrightness(channels_split[1], pixels_count);
-	changeBrightness(channels_split[2], pixels_count);
-
-	cv::Mat channels_merge[3] = { channels_split[0],channels_split[1], channels_split[2] };
-	cv::Mat changed_image;
-	cv::merge(channels_merge, 3, changed_image);
-	cv::imwrite("lab03_rgb_res.png", changed_image);
+	cv::imwrite("lab03_rgb_res.png", changeBrightness(image_png, pixels_count));
 	
 	cv::Mat graphic(512, 512, CV_8UC3, cv::Scalar(255, 255, 255));
 

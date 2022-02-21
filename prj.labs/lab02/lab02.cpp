@@ -17,6 +17,7 @@ int main() {
 	std::vector<int> quality;
 	cv::imwrite("cross_0256x0256_025.jpg", image_png, { cv::IMWRITE_JPEG_QUALITY, 25 });
 
+
 	cv::Mat channels_split[3];
 	cv::split(image_png, channels_split);
 
@@ -45,8 +46,6 @@ int main() {
 
 	cv::imwrite("cross_0256x0256_png_channels.png", mosaic);
 
-	cv::imwrite("image_jpg.jpg", image_png, { cv::IMWRITE_JPEG_QUALITY, 100 });
-
     cv::Mat histogram_png(256, 256, CV_8UC3, cv::Scalar(240, 240, 240));
     int blue_pixels_count[256];
     int green_pixels_count[256];
@@ -56,7 +55,7 @@ int main() {
     getBrightness(channels_split[1], green_pixels_count);
     getBrightness(channels_split[2], red_pixels_count);
 
-	cv::Mat image_jpg = cv::imread("./image_jpg.jpg");
+	cv::Mat image_jpg = cv::imread("./cross_0256x0256_025.jpg");
 
 	cv::split(image_jpg, channels_split);
 
@@ -92,6 +91,8 @@ int main() {
             max = red_pixels_count[i];
         }
     }
+
+    std::cout << max;
 
     for (int i = 0; i < 256; i++) {
         blue_pixels_count[i] = ((double)blue_pixels_count[i] / max) * histogram_png.rows;

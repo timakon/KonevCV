@@ -2,7 +2,7 @@
 
 void lab4(std::string nameOfVideo, int border, int morphologySize1, int morphologySize2)
 {
-	cv::VideoCapture video("../../../data/" + nameOfVideo + ".mp4");
+	cv::VideoCapture video("../../../data/4laba/" + nameOfVideo + ".mp4");
 
 	if (!video.isOpened()) {
 			std::cout << "Error opening video stream or file" << std::endl;
@@ -11,8 +11,6 @@ void lab4(std::string nameOfVideo, int border, int morphologySize1, int morpholo
     int nFrames = video.get(cv::CAP_PROP_FRAME_COUNT);
 
     cv::Mat frames[3];
-    //cv::Mat framesGS[3];
-    //cv::Mat framesBin[3];
 
     int frame_number;
     for (size_t i = 0; i < 3; i++)
@@ -29,17 +27,30 @@ void lab4(std::string nameOfVideo, int border, int morphologySize1, int morpholo
         cv::morphologyEx(frames[i], maska, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(morphologySize1, morphologySize2)));
         cv::morphologyEx(maska, maska, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(10, 10)));
         cv::imwrite("frames/"+ nameOfVideo + "WithMask" + std::to_string(i + 1) + ".png", maska);
-        //cv::imshow("maska" + std::to_string(i), maska);
         cv::Mat srcOut(maska.size(), CV_32S);;
         cv::Mat stats;
         cv::Mat centroids;
         int nLabels = cv::connectedComponentsWithStats(maska, srcOut, stats, centroids);
         std::vector<cv::Vec3b> colors(nLabels);
-        for (size_t i = 0; i < nLabels; i++)
-        {
-            colors[i] = cv::Vec3b((rand() & 255), (rand() & 255), (rand() & 255));
+
+        std::cout << "\nnLables: " << nLabels << "\n";
+        std::cout << nameOfVideo << std::endl;
+        int max = 0;
+        int maxLabel = 0;
+        for (int j = 1; j < nLabels; j++) {
+            if (max < stats.at<int>(j, cv::CC_STAT_AREA)) {
+                max = stats.at<int>(j, cv::CC_STAT_AREA);
+                maxLabel = j;      
+            }
+
+            std::cout << "frame: " << i << " label: " << j << " area: " << stats.at<int>(j, cv::CC_STAT_AREA) << std::endl;
         }
 
+        for (size_t i = 0; i < nLabels; i++)
+        {
+            colors[i] = cv::Vec3b(0, 0, 0);
+        }
+        colors[maxLabel] = cv::Vec3b(255, 255, 255);
 
         cv::Mat dst(maska.size(), CV_8UC3);
         for (int r = 0; r < dst.rows; ++r) {
@@ -57,10 +68,10 @@ void lab4(std::string nameOfVideo, int border, int morphologySize1, int morpholo
 }
 
 int main() {
-    //lab4("5k", 188, 50,150);
-    //lab4("2k", 185, 100,250);
-    //lab4("1k", 187, 140,140);
+    lab4("5k", 188, 50,150);
+    lab4("2k", 185, 150,250);
+    lab4("1k", 187, 140,140);
     lab4("100rub", 120, 180,100);
-    //lab4("500rub", 156, 30,30); //cv::THRESH_TOZERO
+    lab4("500rub", 156, 50, 50);
 
 }

@@ -1,12 +1,27 @@
 #include <opencv2/opencv.hpp>
 
-void lab4(std::string nameOfVideo, int border, int morphologySize1, int morphologySize2)
-{
-	cv::VideoCapture video("../../../data/4laba/" + nameOfVideo + ".mp4");
+double quality(cv::Mat mask, cv::Mat standard_mask) {
+    double quality = mask.rows* mask.cols;
 
-	if (!video.isOpened()) {
-			std::cout << "Error opening video stream or file" << std::endl;
-	}
+    for (int i = 0; i < mask.rows; i++) {
+        for (int j = 0; j < mask.cols; j++) {
+            if (mask.at<uint8_t>(i, j) != standard_mask.at<uint8_t>(i, j)) {
+                quality--;
+            }
+        }
+    }
+    quality = quality / (mask.rows * mask.cols) * 100;
+
+    return quality;
+}
+
+void lab4(std::string nameOfVideo)
+{
+    cv::VideoCapture video("../../../data/4laba/" + nameOfVideo + ".mp4");
+
+    if (!video.isOpened()) {
+        std::cout << "Error opening video stream or file" << std::endl;
+    }
 
     int nFrames = video.get(cv::CAP_PROP_FRAME_COUNT);
 
@@ -20,13 +35,13 @@ void lab4(std::string nameOfVideo, int border, int morphologySize1, int morpholo
         video >> frames[i];
         cv::imwrite("frames/" + nameOfVideo + "Original" + std::to_string(i + 1) + ".png", frames[i]);
         cv::cvtColor(frames[i], frames[i], cv::COLOR_BGR2GRAY);
-        cv::threshold(frames[i], frames[i], border, 255, cv::THRESH_BINARY);
+        cv::threshold(frames[i], frames[i], 187, 255, cv::THRESH_BINARY);
         cv::imwrite("frames/" + nameOfVideo + "Binarizacia" + std::to_string(i + 1) + ".png", frames[i]);
         //cv::imshow("frame"+ std::to_string(i), frames[i]);
         cv::Mat maska;
-        cv::morphologyEx(frames[i], maska, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(morphologySize1, morphologySize2)));
+        cv::morphologyEx(frames[i], maska, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(140, 140)));
         cv::morphologyEx(maska, maska, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(10, 10)));
-        cv::imwrite("frames/"+ nameOfVideo + "WithMask" + std::to_string(i + 1) + ".png", maska);
+        cv::imwrite("frames/" + nameOfVideo + "WithMask" + std::to_string(i + 1) + ".png", maska);
         cv::Mat srcOut(maska.size(), CV_32S);;
         cv::Mat stats;
         cv::Mat centroids;
@@ -40,7 +55,7 @@ void lab4(std::string nameOfVideo, int border, int morphologySize1, int morpholo
         for (int j = 1; j < nLabels; j++) {
             if (max < stats.at<int>(j, cv::CC_STAT_AREA)) {
                 max = stats.at<int>(j, cv::CC_STAT_AREA);
-                maxLabel = j;      
+                maxLabel = j;
             }
 
             std::cout << "frame: " << i << " label: " << j << " area: " << stats.at<int>(j, cv::CC_STAT_AREA) << std::endl;
@@ -61,17 +76,18 @@ void lab4(std::string nameOfVideo, int border, int morphologySize1, int morpholo
             }
         }
         cv::imwrite("frames/" + nameOfVideo + "ConnectedComponents" + std::to_string(i + 1) + ".png", dst);
+        std::cout<< quality(dst, cv::imread("../../../data/4laba/idealMask" + nameOfVideo + ".png")) << "------------------------------\n";
     }
 
     video.release();
+    cv::waitKey(0);
     cv::destroyAllWindows();
 }
 
 int main() {
-    lab4("5k", 188, 50,150);
-    lab4("2k", 185, 150,250);
-    lab4("1k", 187, 140,140);
-    lab4("100rub", 120, 180,100);
-    lab4("500rub", 156, 50, 50);
-
+    lab4("5k");
+    lab4("2k");
+    lab4("1k");
+    lab4("100rub");
+    lab4("500rub");
 }

@@ -26,6 +26,7 @@ void lab4(std::string nameOfVideo)
     int nFrames = video.get(cv::CAP_PROP_FRAME_COUNT);
 
     cv::Mat frames[3];
+    cv::Mat frame[3];
 
     int frame_number;
     for (size_t i = 0; i < 3; i++)
@@ -34,12 +35,12 @@ void lab4(std::string nameOfVideo)
         video.set(cv::CAP_PROP_POS_FRAMES, frame_number);
         video >> frames[i];
         cv::imwrite("frames/" + nameOfVideo + "Original" + std::to_string(i + 1) + ".png", frames[i]);
-        cv::cvtColor(frames[i], frames[i], cv::COLOR_BGR2GRAY);
-        cv::threshold(frames[i], frames[i], 187, 255, cv::THRESH_BINARY);
-        cv::imwrite("frames/" + nameOfVideo + "Binarizacia" + std::to_string(i + 1) + ".png", frames[i]);
+        cv::cvtColor(frames[i], frame[i], cv::COLOR_BGR2GRAY);
+        cv::threshold(frame[i], frame[i], 187, 255, cv::THRESH_BINARY);
+        cv::imwrite("frames/" + nameOfVideo + "Binarizacia" + std::to_string(i + 1) + ".png", frame[i]);
         //cv::imshow("frame"+ std::to_string(i), frames[i]);
         cv::Mat maska;
-        cv::morphologyEx(frames[i], maska, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(140, 140)));
+        cv::morphologyEx(frame[i], maska, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(140, 140)));
         cv::morphologyEx(maska, maska, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(10, 10)));
         cv::imwrite("frames/" + nameOfVideo + "WithMask" + std::to_string(i + 1) + ".png", maska);
         cv::Mat srcOut(maska.size(), CV_32S);;
@@ -75,12 +76,38 @@ void lab4(std::string nameOfVideo)
                 pixel = colors[label];
             }
         }
+        cv::cvtColor(dst, dst, cv::COLOR_BGR2GRAY);
+        cv::Mat standard_mask = cv::imread("../../../data/4laba/idealMask" + nameOfVideo + ".png");
+        cv::cvtColor(standard_mask, standard_mask, cv::COLOR_BGR2GRAY);
         cv::imwrite("frames/" + nameOfVideo + "ConnectedComponents" + std::to_string(i + 1) + ".png", dst);
-        std::cout<< quality(dst, cv::imread("../../../data/4laba/idealMask" + nameOfVideo + ".png")) << "------------------------------\n";
+        std::cout<< quality(dst, standard_mask) << "------------------------------\n";
+
+
+        //creating an image with mask overlaying original
+        cv::Mat mask_over_original(frames[i].size(), CV_8UC3);
+        mask_over_original = 0;
+
+        for (int j = 0; j < frames[i].rows; j++) {
+            for (int k = 0; k < frames[i].cols; k++) {
+                if ((standard_mask.at<uint8_t>(j, k) == 0) && (dst.at<uint8_t>(j, k) == 0)) {
+                    mask_over_original.at<cv::Vec3b>(j, k) = cv::Vec3b(0, 0, 0);
+                }
+                else if ((standard_mask.at<uint8_t>(j, k) == 0) && (dst.at<uint8_t>(j, k) == 255)) {
+                    mask_over_original.at<cv::Vec3b>(j, k) = cv::Vec3b(0, 0, 255);
+                }
+                else if ((standard_mask.at<uint8_t>(j, k) == 255) && (dst.at<uint8_t>(j, k) == 0)) {
+                    mask_over_original.at<cv::Vec3b>(j, k) = cv::Vec3b(255, 0, 0);
+                }
+                else if ((standard_mask.at<uint8_t>(j, k) == 255) && (dst.at<uint8_t>(j, k) == 255)) {
+                    mask_over_original.at<cv::Vec3b>(j, k) = cv::Vec3b(255, 255, 255);
+                }
+            }
+        }
+        cv::addWeighted(frames[i], 0.5, mask_over_original, 0.5, 0.0, mask_over_original);
+        cv::imwrite("frames/" + nameOfVideo + "_final_" + std::to_string(i + 1) + ".png", mask_over_original); //saving the final img
     }
 
     video.release();
-    cv::waitKey(0);
     cv::destroyAllWindows();
 }
 
